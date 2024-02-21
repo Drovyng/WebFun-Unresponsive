@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script>
+        document.body = document.createElement("body");
+
+        function lerp(start, end, amt) {
+            return (1-amt)*start+amt*end
+        }
+
+        const params = window.location.search.split("?");
+        const first = params.indexOf("notfirst") === -1;
+        let winType = "";
+        let winTimer = 0;
+        let winStartTime = 0;
+
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+
+        params.shift();
+
+        if (!first){
+            winType = params[1].slice(5);
+            winTimer = params[2].slice(6);
+            winStartTime = params[3].slice(10);
+        }
+
+
+        let counterPopups = 0;
+
+        function popupUnresponsive(timer){
+            const windowX = window.screenX;
+            const windowY = window.screenY;
+            const windowWidth = window.outerWidth;
+            const windowHeight = window.outerHeight;
+
+            let openX = windowX + windowWidth - 150;
+            let openY = windowY + windowHeight - 150;
+
+            if (counterPopups % 2 === 0){
+                openX = windowX + 50;
+            }
+            if (counterPopups === 0 || counterPopups === 3){
+                openY = windowY + 50;
+            }
+
+            window.open(
+                "http://localhost:63342/html_multiwindow/index.html?notfirst?type=unresponsive?timer=" + timer + "?starttime=" + Date.now(),
+                "Haha",
+                "left=" + openX + ",top=" + openY +
+                ",width=325,height=123,noopener, resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            );
+            counterPopups = (counterPopups + 1) % 4;
+        }
+
+        function popupPopups(timer, id, curTime){
+            const windowX = window.screenX;
+            const windowY = window.screenY;
+            const windowWidth = window.outerWidth;
+            const windowHeight = window.outerHeight;
+
+            let popupsBorders = [
+                [windowX + 50, windowY + 50, 106 * 3, 68 * 3],
+                [windowX + windowWidth - 100 * 3, windowY + 50, 93 * 3, 67 * 3],
+                [windowX + 50, windowY + windowHeight - 75 * 3, 95 * 3, 54 * 3],
+                [windowX + windowWidth - 100 * 3, windowY + windowHeight - 75 * 3, 78 * 3, 58 * 3]
+            ];
+
+            window.open(
+                "http://localhost:63342/html_multiwindow/index.html?notfirst?type=popups" + id + "?timer=" + timer + "?starttime=" + curTime,
+                "Haha",
+                "left=" + popupsBorders[id][0] + ",top=" + popupsBorders[id][1] +
+                ",width=" + (popupsBorders[id][2]  + 20) + ",height=" + (popupsBorders[id][3] + 20) + ",noopener, resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            );
+            counterPopups = (counterPopups + 1) % 4;
+        }
+
+        function popupFatal(id, curTime){
+
+            let popupsPoses = [
+                [70 + (screenHeight - 140) * Math.random(), 0],
+                [70 + (screenHeight - 140) * Math.random(), screenHeight],
+
+                [0,           70 + (screenHeight - 140) * Math.random()],
+                [screenWidth, 70 + (screenHeight - 140) * Math.random()]
+            ];
+
+            window.open(
+                "http://localhost:63342/html_multiwindow/index.html?notfirst?type=fatal" + id + "?timer=0" + "?starttime=" + curTime,
+                "Haha",
+                "left=" + (popupsPoses[id][0] - 150) + ",top=" + (popupsPoses[id][1] - 60) +
+                ",width=300,height=120,noopener, resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            );
+            counterPopups = (counterPopups + 1) % 4;
+        }
+        let siteTime = 0.0;
+        let gameTime = 0.0;
+
+        let events = [
+            [12000, "Unresponsive", 1714.2857142856992],
+            [12857.1428571429, "Unresponsive", 857.1428571427987],
+
+
+            [25714.2857142857, "Unresponsive", 1714.2857142856992],
+            [26571.4285714286, "Unresponsive", 857.1428571427987],
+            [27428.5714285714, "Popups", 56777.142857142906],
+
+
+            [53142.8571428572, "Unresponsive", 1714.2857142856992],
+            [54000, "Unresponsive", 857.1428571427987],
+
+
+            [114925.714285714, "Unresponsive", 1714.2857142856992],
+            [115782.857142857, "Unresponsive", 857.1428571427987],
+
+            [119640, "Fatal", 1],
+            [123068.571428571, "Fatal", 1],
+            [124354.285714286, "Fatal", 1],
+            [126068.571428571, "Fatal", 1],
+            [127782.857142857, "Fatal", 1],
+            [129497.142857143, "Fatal", 1],
+            [130354.285714286, "Fatal", 1],
+            [131211.428571429, "Fatal", 1],
+            [132068.571428571, "Fatal", 2],
+            [132925.714285714, "Fatal", 1],
+            [133782.857142857, "Fatal", 2],
+            [134640, "Fatal", 1],
+            [135497.142857143, "Fatal", 1],
+            [136354.285714286, "Fatal", 1],
+            [137211.428571429, "Fatal", 1],
+            [138068.571428571, "Fatal", 1],
+            [138925.714285714, "Fatal", 1],
+            [139782.857142857, "Fatal", 1],
+            [140211.428571429, "Fatal", 1],
+            [140640, "Fatal", 1],
+            [141497.142857143, "Fatal", 1],
+            [142354.285714286, "Fatal", 1],
+            [143211.428571429, "Fatal", 1],
+            [144068.571428571, "Fatal", 4]
+        ];
+        function handleEvent(ev){
+            let curTime = Date.now();
+            switch (ev[1]) {
+                case "Unresponsive":
+                    popupUnresponsive(ev[2]);
+                    break;
+                case "Popups":
+                    popupPopups(ev[2], 0, curTime);
+                    popupPopups(ev[2], 1, curTime);
+                    popupPopups(ev[2], 2, curTime);
+                    popupPopups(ev[2], 3, curTime);
+                    break;
+                case "Fatal":
+                    for (let i = 0; i < ev[2]; i++) {
+                        popupFatal(parseInt("" + (Math.random() * 4)), curTime);
+                    }
+                    break;
+            }
+        }
+        function handleEvents(){
+            if (events.length > 0) {
+                if (events[0][0] < gameTime) {
+                    handleEvent(events.shift());
+                }
+            }
+        }
+        let lastSiteTime = 0;
+        let winX = window.screenX;
+        let winY = window.screenY;
+        function handleUpdate(){
+            lastSiteTime = siteTime;
+            if (!first) {
+                siteTime = Date.now() - winStartTime;
+                if (siteTime >= winTimer && !winType.startsWith("fatal")){
+                    window.close();
+                    return;
+                }
+
+                if (winType === "unresponsive") {
+                    window.moveBy(Math.sin(siteTime / 10) * 7.5, Math.cos(siteTime / 10) * 7.5);
+                }
+                else if (winType.startsWith("popups")) {
+                    window.moveBy(0, Math.cos(siteTime / 100) * 3);
+                }
+                else if (winType.startsWith("fatal")) {
+                    let i = parseInt(winType.charAt(5));
+                    let moves = [
+                        [Math.sin(siteTime / 100) * 3, (siteTime - lastSiteTime) / 2],
+                        [Math.cos(siteTime / 100) * 3, -(siteTime - lastSiteTime) / 2],
+                        [(siteTime - lastSiteTime) / 2, Math.sin(siteTime / 100) * 3],
+                        [-(siteTime - lastSiteTime) / 2, Math.cos(siteTime / 100) * 3],
+                    ];
+                    winX += moves[i][0];
+                    winY += moves[i][1];
+
+                    window.moveTo(winX, winY);
+
+                    let closeSituations = [
+                        winY + 120 > screenHeight,
+                        winY < 0,
+                        winX + 300 > screenWidth,
+                        winX < 0
+                    ];
+                    if (closeSituations[i]){
+                        window.close();
+                        return;
+                    }
+                }
+                return;
+            }
+
+            if (document.body.getElementsByClassName("main_video").length === 0){
+                return;
+            }
+            let video = document.body.getElementsByClassName("main_video")[0];
+            siteTime = video.currentTime * 1000;
+            gameTime = siteTime - 13110;
+
+            handleEvents();
+        }
+        function testPopups(){
+            window.open("about:blank", "test", "width=500,height=250, noopener,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0");
+        }
+        function loadVideo() {
+            document.body.innerHTML = "<div id='outer'><video class='main_video' autoplay preload=\"auto\" style=\"aspect-ratio: 16/10; width: 75vw;\"><source src=\"media/video.mp4\" type=\"video/mp4\" /></video></div>";
+        }
+        if (first) {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile){
+                document.body.innerHTML = "<div id='outer'><a style='font-size: calc(25vw * 10 / 16);'>No Mobile :(</a></div>";
+            }
+            else {
+                document.body.innerHTML = "<div id='outer'><button onclick='testPopups();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Test</button>\n<button onclick='loadVideo();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Load</button></div>";
+            }
+        }
+        else{
+            switch (winType) {
+                case "unresponsive":
+                    document.body.innerHTML = "<div id='outer'><img src='media/unresponsive.png' style='aspect-ratio: 305/103; width: 90vw;' /></div>";
+                    break;
+                case "popups0":
+                    document.body.innerHTML = "<div id='outer'><img src='media/sonic.png' style='aspect-ratio: 106/68; width: 90vw;' /></div>";
+                    break;
+                case "popups1":
+                    document.body.innerHTML = "<div id='outer'><img src='media/idk%20what%20this%20is.png' style='aspect-ratio: 93/67; width: 90vw;' /></div>";
+                    break;
+                case "popups2":
+                    document.body.innerHTML = "<div id='outer'><img src='media/idk%20either.png' style='aspect-ratio: 95/54; width: 90vw;' /></div>";
+                    break;
+                case "popups3":
+                    document.body.innerHTML = "<div id='outer'><img src='media/gf.png' style='aspect-ratio: 78/58; width: 90vw;' /></div>";
+                    break;
+                case "fatal0":
+                case "fatal1":
+                case "fatal2":
+                case "fatal3":
+                    document.body.innerHTML = "<div id='outer'><img src='media/error.png' style='aspect-ratio: 283/109; width: 90vw;' /></div>";
+                    break;
+            }
+        }
+        setInterval(handleUpdate, 16.666666);
+    </script>
+    <style>
+        #outer {
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-right: -50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+</html>
