@@ -7,38 +7,115 @@
     <script>
         document.body = document.createElement("body");
 
-        function lerp(start, end, amt) {
-            return (1-amt)*start+amt*end
+        let winCollection = [];
+        let windowsCounter = 1;
+
+        class PopupWindow{
+            constructor(win, winType, winTimer) {
+                this.win = win;
+                this.winType = winType;
+                this.winTimer = winTimer;
+                this.winX = this.win.screenX;
+                this.winY = this.win.screenY;
+                this.img = new Image();
+                this.setBody();
+
+                winCollection.push(this);
+            }
+            setBody(){
+                this.win.document.createElement("body");
+                this.win.document.body.innerHTML = "<div id='image-container' style='margin: 0; position: absolute;  top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%);'></div>";
+                this.img.onload = () => {
+                    this.loaded = true;
+                };
+                switch (this.winType) {
+                    case "unresponsive":
+                        this.win.document.title = "Unresponsive";
+                        this.img.src = 'https://drovyng.github.io/WebFun-Unresponsive/media/unresponsive.png';
+                        break;
+                    case "popups0":
+                        this.win.document.title = "Sonic";
+                        this.img.src = 'https://drovyng.github.io/WebFun-Unresponsive/media/sonic.png';
+                        break;
+                    case "popups1":
+                        this.win.document.title = "Idk What This Is";
+                        this.img.src = 'https://drovyng.github.io/WebFun-Unresponsive/media/idk%20what%20this%20is.png';
+                        break;
+                    case "popups2":
+                        this.win.document.title = "Idk Either";
+                        this.img.src = 'https://drovyng.github.io/WebFun-Unresponsive/media/idk%20either.png';
+                        break;
+                    case "popups3":
+                        this.win.document.title = "Girlfriend";
+                        this.img.src = 'https://drovyng.github.io/WebFun-Unresponsive/media/gf.png';
+                        break;
+                    case "fatal0":
+                    case "fatal1":
+                    case "fatal2":
+                    case "fatal3":
+                        this.win.document.title = "Sorry";
+                        this.img.src = 'https://drovyng.github.io/WebFun-Unresponsive/media/error.png';
+                        break;
+                }
+                this.img.style.width = "90vw";
+                this.img.style.aspectRatio = "" + this.img.naturalWidth + "/" + this.img.naturalHeight;
+                this.win.document.getElementById("image-container").appendChild(this.img);
+            }
+            update(elapsed){
+                if (this.win === null || !this.img.isConnected) return;
+
+                this.winTimer -= elapsed;
+
+                if (this.winTimer <= 0 && !this.winType.startsWith("fatal")){
+                    this.win.close();
+                    return;
+                }
+
+                if (this.winType === "unresponsive") {
+                    this.win.moveBy(Math.sin(siteTime / 10) * 7.5, Math.cos(siteTime / 10) * 7.5);
+                }
+                else if (this.winType.startsWith("popups")) {
+                    this.win.moveBy(0, Math.cos(siteTime / 100) * 3);
+                }
+                else if (this.winType.startsWith("fatal")) {
+                    let i = parseInt(this.winType.charAt(5));
+                    let moves = [
+                        [Math.sin(siteTime / 100) * 3, elapsed / 2],
+                        [Math.cos(siteTime / 100) * 3, -elapsed / 2],
+                        [elapsed / 2, Math.sin(siteTime / 100) * 3],
+                        [-elapsed / 2, Math.cos(siteTime / 100) * 3],
+                    ];
+                    this.winX += moves[i][0];
+                    this.winY += moves[i][1];
+
+                    this.win.moveTo(this.winX, this.winY);
+
+                    let closeSituations = [
+                        this.winY + 120 > screenHeight,
+                        this.winY < 0,
+                        this.winX + 300 > screenWidth,
+                        this.winX < 0
+                    ];
+                    if (closeSituations[i]){
+                        this.win.close();
+                    }
+                }
+            }
         }
-
-        const params = window.location.search.split("?");
-        const first = params.indexOf("notfirst") === -1;
-        let winType = "";
-        let winTimer = 0;
-        let winStartTime = 0;
-
         const screenWidth = window.screen.width;
         const screenHeight = window.screen.height;
-
-        params.shift();
-
-        if (!first){
-            winType = params[1].slice(5);
-            winTimer = params[2].slice(6);
-            winStartTime = params[3].slice(10);
-        }
 
 
         let counterPopups = 0;
 
-        function popupUnresponsive(timer){
+        function popupUnresponsive(timer, startTime){
             const windowX = window.screenX;
             const windowY = window.screenY;
             const windowWidth = window.outerWidth;
             const windowHeight = window.outerHeight;
 
-            let openX = windowX + windowWidth - 150;
-            let openY = windowY + windowHeight - 150;
+            let openX = windowX + windowWidth - 425;
+            let openY = windowY + windowHeight - 223;
 
             if (counterPopups % 2 === 0){
                 openX = windowX + 50;
@@ -46,40 +123,39 @@
             if (counterPopups === 0 || counterPopups === 3){
                 openY = windowY + 50;
             }
-
-            window.open(
-                "https://drovyng.github.io/WebFun-Unresponsive/?notfirst?type=unresponsive?timer=" + timer + "?starttime=" + Date.now(),
-                "Haha",
+            new PopupWindow(window.open(
+                "about:blank",
+                "OpenedDRS" + windowsCounter,
                 "left=" + openX + ",top=" + openY +
-                ",width=325,height=123,noopener, resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
-            );
+                ",width=325,height=173,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            ), "unresponsive", timer + startTime - Date.now());
+            windowsCounter++;
             counterPopups = (counterPopups + 1) % 4;
         }
 
-        function popupPopups(timer, id, curTime){
+        function popupPopups(timer, id, startTime){
             const windowX = window.screenX;
             const windowY = window.screenY;
             const windowWidth = window.outerWidth;
             const windowHeight = window.outerHeight;
 
             let popupsBorders = [
-                [windowX + 50, windowY + 50, 106 * 3, 68 * 3],
-                [windowX + windowWidth - 100 * 3, windowY + 50, 93 * 3, 67 * 3],
-                [windowX + 50, windowY + windowHeight - 75 * 3, 95 * 3, 54 * 3],
-                [windowX + windowWidth - 100 * 3, windowY + windowHeight - 75 * 3, 78 * 3, 58 * 3]
+                [windowX + 50, windowY + 50, 106 * 3, 98 * 3],
+                [windowX + windowWidth - 100 * 3, windowY + 50, 93 * 3, 87 * 3],
+                [windowX + 50, windowY + windowHeight - 95 * 3, 95 * 3, 74 * 3],
+                [windowX + windowWidth - 100 * 3, windowY + windowHeight - 95 * 3, 78 * 3, 78 * 3]
             ];
 
-            window.open(
-                "https://drovyng.github.io/WebFun-Unresponsive/?notfirst?type=popups" + id + "?timer=" + timer + "?starttime=" + curTime,
-                "Haha",
+            new PopupWindow(window.open(
+                "about:blank",
+                "OpenedDRS" + windowsCounter,
                 "left=" + popupsBorders[id][0] + ",top=" + popupsBorders[id][1] +
-                ",width=" + (popupsBorders[id][2]  + 20) + ",height=" + (popupsBorders[id][3] + 20) + ",noopener, resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
-            );
-            counterPopups = (counterPopups + 1) % 4;
+                ",width=" + (popupsBorders[id][2] + 20) + ",height=" + (popupsBorders[id][3] + 20) + ",resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            ), "popups" + id, timer + startTime - Date.now());
+            windowsCounter++;
         }
 
-        function popupFatal(id, curTime){
-
+        function popupFatal(id){
             let popupsPoses = [
                 [70 + (screenHeight - 140) * Math.random(), 0],
                 [70 + (screenHeight - 140) * Math.random(), screenHeight],
@@ -88,13 +164,13 @@
                 [screenWidth, 70 + (screenHeight - 140) * Math.random()]
             ];
 
-            window.open(
-                "https://drovyng.github.io/WebFun-Unresponsive/?notfirst?type=fatal" + id + "?timer=0" + "?starttime=" + curTime,
-                "Haha",
+            new PopupWindow(window.open(
+                "about:blank",
+                "OpenedDRS" + windowsCounter,
                 "left=" + (popupsPoses[id][0] - 150) + ",top=" + (popupsPoses[id][1] - 60) +
-                ",width=300,height=120,noopener, resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
-            );
-            counterPopups = (counterPopups + 1) % 4;
+                ",width=300,height=180,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            ), "fatal" + id, 0);
+            windowsCounter++;
         }
         let siteTime = 0.0;
         let gameTime = 0.0;
@@ -141,21 +217,22 @@
             [143211.428571429, "Fatal", 1],
             [144068.571428571, "Fatal", 4]
         ];
+
         function handleEvent(ev){
-            let curTime = Date.now();
+            const dateNow = Date.now();
             switch (ev[1]) {
                 case "Unresponsive":
-                    popupUnresponsive(ev[2]);
+                    popupUnresponsive(ev[2], dateNow);
                     break;
                 case "Popups":
-                    popupPopups(ev[2], 0, curTime);
-                    popupPopups(ev[2], 1, curTime);
-                    popupPopups(ev[2], 2, curTime);
-                    popupPopups(ev[2], 3, curTime);
+                    popupPopups(ev[2], 0, dateNow);
+                    popupPopups(ev[2], 1, dateNow);
+                    popupPopups(ev[2], 2, dateNow);
+                    popupPopups(ev[2], 3, dateNow);
                     break;
                 case "Fatal":
                     for (let i = 0; i < ev[2]; i++) {
-                        popupFatal(parseInt("" + (Math.random() * 4)), curTime);
+                        popupFatal(parseInt("" + (Math.random() * 4)));
                     }
                     break;
             }
@@ -168,49 +245,9 @@
             }
         }
         let lastSiteTime = 0;
-        let winX = window.screenX;
-        let winY = window.screenY;
+
         function handleUpdate(){
             lastSiteTime = siteTime;
-            if (!first) {
-                siteTime = Date.now() - winStartTime;
-                if (siteTime >= winTimer && !winType.startsWith("fatal")){
-                    window.close();
-                    return;
-                }
-
-                if (winType === "unresponsive") {
-                    window.moveBy(Math.sin(siteTime / 10) * 7.5, Math.cos(siteTime / 10) * 7.5);
-                }
-                else if (winType.startsWith("popups")) {
-                    window.moveBy(0, Math.cos(siteTime / 100) * 3);
-                }
-                else if (winType.startsWith("fatal")) {
-                    let i = parseInt(winType.charAt(5));
-                    let moves = [
-                        [Math.sin(siteTime / 100) * 3, (siteTime - lastSiteTime) / 2],
-                        [Math.cos(siteTime / 100) * 3, -(siteTime - lastSiteTime) / 2],
-                        [(siteTime - lastSiteTime) / 2, Math.sin(siteTime / 100) * 3],
-                        [-(siteTime - lastSiteTime) / 2, Math.cos(siteTime / 100) * 3],
-                    ];
-                    winX += moves[i][0];
-                    winY += moves[i][1];
-
-                    window.moveTo(winX, winY);
-
-                    let closeSituations = [
-                        winY + 120 > screenHeight,
-                        winY < 0,
-                        winX + 300 > screenWidth,
-                        winX < 0
-                    ];
-                    if (closeSituations[i]){
-                        window.close();
-                        return;
-                    }
-                }
-                return;
-            }
 
             if (document.body.getElementsByClassName("main_video").length === 0){
                 return;
@@ -220,58 +257,26 @@
             gameTime = siteTime - 13110;
 
             handleEvents();
+            for (let i = 0; i < winCollection.length; i++) {
+                winCollection[i].update(siteTime - lastSiteTime);
+            }
         }
         function testPopups(){
             window.open("about:blank", "test", "width=500,height=250, noopener,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0");
         }
         function loadVideo() {
-            document.body.innerHTML = "<div id='outer'><video class='main_video' autoplay preload=\"auto\" style=\"aspect-ratio: 16/10; width: 75vw;\"><source src=\"media/video.mp4\" type=\"video/mp4\" /></video></div>";
+            document.body.innerHTML = "<div style='margin: 0; position: absolute;  top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%);'><video class='main_video' autoplay preload=\"auto\" style=\"aspect-ratio: 16/10; width: 75vw;\"><source src=\"media/video.mp4\" type=\"video/mp4\" /></video></div>";
         }
-        if (first) {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (isMobile){
-                document.body.innerHTML = "<div id='outer'><a style='font-size: calc(25vw * 10 / 16);'>No Mobile :(</a></div>";
-            }
-            else {
-                document.body.innerHTML = "<div id='outer'><button onclick='testPopups();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Test</button>\n<button onclick='loadVideo();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Load</button></div>";
-            }
+
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile){
+            document.body.innerHTML = "<div style='margin: 0; position: absolute;  top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%);'><a style='font-size: calc(25vw * 10 / 16);'>No Mobile :(</a></div>";
         }
-        else{
-            switch (winType) {
-                case "unresponsive":
-                    document.body.innerHTML = "<div id='outer'><img src='media/unresponsive.png' style='aspect-ratio: 305/103; width: 90vw;' /></div>";
-                    break;
-                case "popups0":
-                    document.body.innerHTML = "<div id='outer'><img src='media/sonic.png' style='aspect-ratio: 106/68; width: 90vw;' /></div>";
-                    break;
-                case "popups1":
-                    document.body.innerHTML = "<div id='outer'><img src='media/idk%20what%20this%20is.png' style='aspect-ratio: 93/67; width: 90vw;' /></div>";
-                    break;
-                case "popups2":
-                    document.body.innerHTML = "<div id='outer'><img src='media/idk%20either.png' style='aspect-ratio: 95/54; width: 90vw;' /></div>";
-                    break;
-                case "popups3":
-                    document.body.innerHTML = "<div id='outer'><img src='media/gf.png' style='aspect-ratio: 78/58; width: 90vw;' /></div>";
-                    break;
-                case "fatal0":
-                case "fatal1":
-                case "fatal2":
-                case "fatal3":
-                    document.body.innerHTML = "<div id='outer'><img src='media/error.png' style='aspect-ratio: 283/109; width: 90vw;' /></div>";
-                    break;
-            }
+        else {
+            document.body.innerHTML = "<div style='margin: 0; position: absolute;  top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%);'><button onclick='testPopups();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Test</button>\n<button onclick='loadVideo();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Load</button></div>";
         }
+
         setInterval(handleUpdate, 16.666666);
     </script>
-    <style>
-        #outer {
-            margin: 0;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            margin-right: -50%;
-            transform: translate(-50%, -50%);
-        }
-    </style>
 </head>
 </html>
