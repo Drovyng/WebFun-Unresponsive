@@ -17,6 +17,8 @@
                 this.winTimer = winTimer;
                 this.winX = this.win.screenX;
                 this.winY = this.win.screenY;
+                this.winW = this.win.width;
+                this.winH = this.win.height;
                 this.img = new Image();
                 this.setBody();
 
@@ -100,6 +102,7 @@
                         this.win.close();
                     }
                 }
+                this.win.resize(this.winW, this.winH);
             }
         }
         const screenWidth = window.screen.width;
