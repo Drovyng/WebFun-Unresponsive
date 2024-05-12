@@ -2,23 +2,27 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>UNRESPONSIVE</title>
+    <link href="faficon.ico" rel="icon">
 
     <script>
         document.body = document.createElement("body");
+
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
 
         let winCollection = [];
         let windowsCounter = 1;
 
         class PopupWindow{
-            constructor(win, winType, winTimer) {
+            constructor(win, winType, winTimer, x, y, w, h) {
                 this.win = win;
                 this.winType = winType;
                 this.winTimer = winTimer;
-                this.winX = this.win.screenX;
-                this.winY = this.win.screenY;
-                this.winW = this.win.width;
-                this.winH = this.win.height;
+                this.winX = x;
+                this.winY = y;
+                this.winW = w;
+                this.winH = h;
                 this.img = new Image();
                 this.setBody();
 
@@ -74,10 +78,11 @@
                 }
 
                 if (this.winType === "unresponsive") {
-                    this.win.moveBy(Math.sin(siteTime / 10) * 7.5, Math.cos(siteTime / 10) * 7.5);
+                    this.winX += Math.sin(siteTime / 10) * 7.5;
+                    this.winY += Math.cos(siteTime / 10) * 7.5;
                 }
                 else if (this.winType.startsWith("popups")) {
-                    this.win.moveBy(0, Math.cos(siteTime / 100) * 3);
+                    this.winY += Math.cos(siteTime / 100) * 3;
                 }
                 else if (this.winType.startsWith("fatal")) {
                     let i = parseInt(this.winType.charAt(5));
@@ -90,8 +95,6 @@
                     this.winX += moves[i][0];
                     this.winY += moves[i][1];
 
-                    this.win.moveTo(this.winX, this.winY);
-
                     let closeSituations = [
                         this.winY + 120 > screenHeight,
                         this.winY < 0,
@@ -100,12 +103,17 @@
                     ];
                     if (closeSituations[i]){
                         this.win.close();
+                        return;
                     }
                 }
+
+                this.win.moveTo(
+                    Math.min(Math.max(this.winX, 10), screenWidth - this.winW - 10),
+                    Math.min(Math.max(this.winY, 10), screenHeight - this.winH - 10)
+                );
+                this.win.resizeTo(this.winW, this.winH);
             }
         }
-        const screenWidth = window.screen.width;
-        const screenHeight = window.screen.height;
 
 
         let counterPopups = 0;
@@ -130,7 +138,7 @@
                 "OpenedDRS" + windowsCounter,
                 "left=" + openX + ",top=" + openY +
                 ",width=325,height=173,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
-            ), "unresponsive", timer + startTime - Date.now());
+            ), "unresponsive", timer + startTime - Date.now(), openX, openY, 325, 173);
             windowsCounter++;
             counterPopups = (counterPopups + 1) % 4;
         }
@@ -153,7 +161,7 @@
                 "OpenedDRS" + windowsCounter,
                 "left=" + popupsBorders[id][0] + ",top=" + popupsBorders[id][1] +
                 ",width=" + (popupsBorders[id][2] + 20) + ",height=" + (popupsBorders[id][3] + 20) + ",resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
-            ), "popups" + id, timer + startTime - Date.now());
+            ), "popups" + id, timer + startTime - Date.now(), popupsBorders[id][0], popupsBorders[id][1], popupsBorders[id][2] + 20, popupsBorders[id][3] + 20);
             windowsCounter++;
         }
 
@@ -171,7 +179,7 @@
                 "OpenedDRS" + windowsCounter,
                 "left=" + (popupsPoses[id][0] - 150) + ",top=" + (popupsPoses[id][1] - 60) +
                 ",width=300,height=180,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
-            ), "fatal" + id, 0);
+            ), "fatal" + id, 0, popupsPoses[id][0] - 150, popupsPoses[id][1] - 60, 300, 180);
             windowsCounter++;
         }
         let siteTime = 0.0;
@@ -247,8 +255,20 @@
             }
         }
         let lastSiteTime = 0;
+        let videoNeedLoad = false;
+        let lol = false;
 
         function handleUpdate(){
+            if (lol){
+                lol = false;
+                testPopup();
+                loadVideo();
+            }
+            if (videoNeedLoad){
+                videoNeedLoad = false;
+                lol = true;
+            }
+
             lastSiteTime = siteTime;
 
             if (document.body.getElementsByClassName("main_video").length === 0){
@@ -263,19 +283,53 @@
                 winCollection[i].update(siteTime - lastSiteTime);
             }
         }
-        function testPopups(){
-            window.open("about:blank", "test", "width=500,height=250, noopener,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0");
+        function pleaseEnablePopups(){
+            document.body.innerHTML = "<div style=\"margin: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; text-align: center;\">\n" +
+                "    <h1 style=\"width: 80vw; margin-bottom: 5px;\">WARNING! Please use Google Chrome browser as most browsers block site functionality.</h1>\n" +
+                "    <h1 style=\"width: 80vw; margin-bottom: 25px; color: #F44\">PLEASE ENABLE POP-UPS! (Site Feature)!!!</h1>\n" +
+                "    <button onclick=\"loadVideoNeed();\" style=\"aspect-ratio: 16/9; width: 20vw; background-size: auto; font-size: calc(13vw * 10 / 16);margin-top: 10px;\">Start</button>\n" +
+                "</div>"
+        }
+        function testPopup(){
+            let win = window.open(
+                "about:blank",
+                "testPopup",
+                "left=" + (screenWidth / 2 - 150) + ",top=" + (screenHeight / 2 - 90) +
+                ",width=300,height=180,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            )
+            if (win === null){
+                pleaseEnablePopups();
+                return;
+            }
+            win.close();
         }
         function loadVideo() {
+            let win = window.open(
+                "about:blank",
+                "testPopup",
+                "left=" + (screenWidth / 2 - 150) + ",top=" + (screenHeight / 2 - 90) +
+                ",width=300,height=180,resizable=no,toolbar=no,scrollbars=no,menubar=no,status=no,directories=0"
+            )
+            if (win === null){
+                pleaseEnablePopups();
+                return;
+            }
+            win.close();
             document.body.innerHTML = "<div style='margin: 0; position: absolute;  top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%);'><video class='main_video' autoplay preload=\"auto\" style=\"aspect-ratio: 16/10; width: 75vw;\"><source src=\"media/video.mp4\" type=\"video/mp4\" /></video></div>";
+        }
+        function loadVideoNeed() {
+            videoNeedLoad = true;
         }
 
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile){
             document.body.innerHTML = "<div style='margin: 0; position: absolute;  top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%);'><a style='font-size: calc(25vw * 10 / 16);'>No Mobile :(</a></div>";
         }
-        else {
-            document.body.innerHTML = "<div style='margin: 0; position: absolute;  top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%);'><button onclick='testPopups();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Test</button>\n<button onclick='loadVideo();' style='aspect-ratio: 16/9; width: 40vw; background-size: auto; font-size: calc(25vw * 10 / 16);'>Load</button></div>";
+        else{
+            document.body.innerHTML = "<div style=\"margin: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; text-align: center;\">\n" +
+                "    <h1 style=\"width: 80vw; margin-bottom: 10px;\">WARNING! Please use Google Chrome browser as most browsers block site functionality.</h1>\n" +
+                "    <button onclick=\"loadVideoNeed();\" style=\"aspect-ratio: 16/9; width: 20vw; background-size: auto; font-size: calc(13vw * 10 / 16);margin-top: 10px;\">Start</button>\n" +
+                "</div>"
         }
 
         setInterval(handleUpdate, 16.666666);
