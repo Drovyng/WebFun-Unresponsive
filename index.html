@@ -68,7 +68,7 @@
                 this.win.document.getElementById("image-container").appendChild(this.img);
             }
             update(elapsed){
-                if (this.win === null || !this.img.isConnected) return;
+                if (this.win === null || !this.img.isConnected || elapsed === 0) return;
 
                 this.winTimer -= elapsed;
 
